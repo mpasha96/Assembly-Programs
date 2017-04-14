@@ -1,0 +1,148 @@
+.model small
+.stack 200h
+.data
+m1 db 10,13,"Enter number : $"
+m2 db 10,13,"Enter the exponent : $"
+m3 db 10,13,"The asnwer is : $"
+.code
+MAIN PROC
+
+mov ax,@data
+mov ds,ax
+mov ah,9
+mov dx,offset m1
+int 21h		;prints first msg
+
+mov ax,0
+call indec	;input 1st number	
+mov bx,Ax	;1st no. in bl
+
+mov ah,9
+mov dx,offset m2
+int 21h		;prints 2nd msg
+
+mov cx,0
+call indec	;inputs exponent
+mov cx,Ax	;store 2nd no. in cl for loop 
+DEC Cx
+
+mov ax,bx 
+L1:			;loop
+	mul bx			
+loop L1
+PUSH AX
+
+mov ah,9
+mov dx,offset m3	   
+int 21h		; prints 3rd msg
+
+POP AX
+call outdec	;calls function
+
+MOV AH,4CH
+INT 21H
+MAIN ENDP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+OUTDEC PROC
+	
+PUSH AX
+PUSH BX
+PUSH CX
+PUSH DX
+CMP AX,0
+JGE IF_CHECK
+PUSH AX
+MOV DL,'-'
+MOV AH,2
+INT 21H
+POP AX
+NEG AX
+
+IF_CHECK:
+MOV CX,0
+MOV BX,10
+
+REP_LOOP:
+	MOV DX,0
+	DIV BX
+	PUSH DX
+	INC CX
+	CMP AX,0
+JNE REP_LOOP
+
+MOV AH,2
+
+
+PRINT_LOOP:
+	POP DX
+	ADD DL,30H
+	INT 21H	
+LOOP PRINT_LOOP
+
+POP DX
+POP CX
+POP BX
+POP AX
+RET
+OUTDEC ENDP	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+INDEC PROC
+
+push dx	
+push cx	
+push bx
+
+START:
+	mov ah,2
+	mov dl,'?'
+	int 21h
+	mov bx,0
+	mov cx,0
+	mov ah,1
+	int 21h
+	cmp al,'-'
+	JE MINUS
+	cmp AL,'+'
+	JE PLUS
+	jmp REP_LOOP
+MINUS:
+	mov cx,1
+PLUS:
+	int 21h
+REP_LOOP:
+	cmp AL,'0'
+	JNGE NOT_DIGIT
+	cmp AL,'9'
+	JNLE NOT_DIGIT
+	sub al,30h
+	mov ah,0
+	push ax
+	mov ax,10
+	mul bx
+	pop bx
+	add bx,ax
+	mov ah,1
+	int 21h
+	cmp AL,0dh
+JNE REP_LOOP
+	mov ax,bx 
+	cmp cx,0
+	JE EXIT
+	neg AX
+EXIT:
+	pop BX
+	pop CX
+	pop DX
+ret
+NOT_DIGIT:
+	mov ah,2
+	mov dl,0dh
+	int 21h
+	mov dl,0ah
+	int 21h
+	JMP START
+INDEC ENDP
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+END MAIN
